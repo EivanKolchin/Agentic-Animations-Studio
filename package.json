@@ -4,7 +4,7 @@
   "private": false,
   "type": "module",
   "description": "Briefed, generated, gated, rigged and rendered illustration and animation - one pipeline, one command.",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "scripts": {
     "hygiene": "node gates/repo-hygiene.mjs",
     "prove": "node prove/gates.mjs && node prove/rig.mjs",
