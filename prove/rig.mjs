@@ -239,5 +239,33 @@ for (const [name, pose] of [
   }
 }
 
-console.log(bad ? `\n${bad} rig checks wrong.\n` : `\nThe rig draws where it solves, the chain composes, the motion loops without a seam, and every motion gate fires on its own defect and on nothing else.\n`)
+/* ---- 5. the rig-tier gate: does the rest pose reproduce the source ---- */
+// Built by rendering this rig at rest and calling that the canon, so a
+// correct decomposition is true by construction and any break is visible
+// against it.
+{
+  const { gates, config } = await import('../gates/index.mjs')
+  const fidelity = (await gates()).find((g) => g.id === 'rig-rest-fidelity')
+  writeFileSync(join(DIR, 'source.png'), await renderPose(rig, {}))
+  const withSource = { ...rig, source: 'source.png' }
+  const run = (r) => fidelity.run({ rig: r, renderPose, cfg: config(null, r, fidelity.id) })
+
+  say((await run(withSource)).pass, 'rest fidelity: an intact rig reproduces its canon')
+
+  // A box cut short - the defect that hides at rest and comes apart the
+  // moment anything turns.
+  const short = {
+    ...withSource,
+    parts: withSource.parts.map((p) => (p.id === 'lower' ? { ...p, file: 'upper.png' } : p)),
+  }
+  const r = await run(short)
+  say(!r.pass, 'rest fidelity: a part swapped for the wrong art is refused', r.detail)
+
+  // A part left out entirely.
+  const missing = { ...withSource, parts: withSource.parts.filter((p) => p.id !== 'lower') }
+  const r2 = await run(missing)
+  say(!r2.pass, 'rest fidelity: an undeclared part is refused', r2.detail)
+}
+
+console.log(bad ? `\n${bad} rig checks wrong.\n` : `\nThe rig draws where it solves, the chain composes, the motion loops without a seam, and every gate fires on its own defect and on nothing else.\n`)
 process.exitCode = bad ? 1 : 0

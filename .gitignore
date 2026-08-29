@@ -36,3 +36,9 @@ tmp/
 *.log
 .DS_Store
 Thumbs.db
+
+# Frame stacks. Derived bytes by the definition above: `node run.mjs
+# frames <rig>` rebuilds them exactly from rig.json and the clip, both of
+# which are tracked, and a four-second stack is a hundred PNGs.
+renders/*fps/
+canon/*/renders/*fps/

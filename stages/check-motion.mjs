@@ -19,8 +19,23 @@ export async function checkMotion(rigName, { clip: only, log = console.log } = {
   const rig = loadRig(CANON, rigName)
   const clips = Object.entries(rig.clips || {}).filter(([n]) => !only || n === only)
   if (!clips.length) throw new Error(`${rigName} has no clip${only ? ` called "${only}"` : 's'} to check.`)
-  const all = (await gates()).filter((g) => g.tier === 'motion')
-  const out = { rig: rigName, clips: [] }
+  const loaded = await gates()
+  const all = loaded.filter((g) => g.tier === 'motion')
+  const out = { rig: rigName, rig_gates: [], clips: [] }
+
+  // Rig-tier gates ask about the DECOMPOSITION, not about a clip, so they
+  // run once. Running them per clip would report the same answer as many
+  // times as there are clips and cost a render each time.
+  for (const g of loaded.filter((x) => x.tier === 'rig')) {
+    let r
+    try {
+      r = await g.run({ rig, poseAt, solve, renderPose, cfg: config(null, rig, g.id) })
+    } catch (e) {
+      r = { pass: false, score: 0, detail: `gate errored: ${e.message}` }
+    }
+    out.rig_gates.push({ id: g.id, ...r })
+    log(`  ${r.pass ? ' ' : 'X'} ${g.id.padEnd(22)} ${r.detail}`)
+  }
 
   for (const [name, clip] of clips) {
     log(`  ${name}`)
@@ -45,6 +60,6 @@ export async function checkMotion(rigName, { clip: only, log = console.log } = {
 
   const file = join(ensure(join(rig.dir, 'reports')), 'motion.json')
   writeFileSync(file, JSON.stringify(out, null, 2) + '\n')
-  out.pass = out.clips.every((c) => c.pass)
+  out.pass = out.clips.every((c) => c.pass) && out.rig_gates.every((r) => r.pass !== false)
   return out
 }
