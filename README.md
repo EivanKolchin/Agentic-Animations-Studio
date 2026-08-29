@@ -114,21 +114,34 @@ refuses to load it.
 | `sheet-registration` | a sheet cell that is empty, doubled, or whose subject crosses a gutter |
 | `frame` | the wrong aspect, or a subject cropped by the edge of its own frame |
 
-Three more run on motion, against a rig and a clip rather than a picture:
+One runs on a RIG, once, because it asks about the decomposition rather
+than about any clip:
+
+| gate | refuses |
+|---|---|
+| `rig-rest-fidelity` | a rig whose rest pose does not reproduce the canon it was cut from |
+
+And four run on MOTION, against a rig and a clip:
 
 | gate | refuses |
 |---|---|
 | `motion-loop-seam` | a declared period that is not a true period of the channels under it |
 | `motion-still-honesty` | a t=0 frame at the top of a swing, which is the frame every thumbnail uses |
 | `motion-anchor-drift` | a planted part that slides because something above it turned |
+| `motion-joint-seam` | a joint that steps open because a covering skirt ends where the angles differ |
 
 `npm run prove` draws nine pictures, breaks eight of them in one specific
 way each, and asserts that the targeted gate fails AND that no other gate
 does. It then renders parts with markers at their own pivots and measures
 where they actually landed - which checks the chain, the composite offset
 and the rotation sign against the PICTURE rather than against the same
-formula run twice - and puts five clips through the motion gates the same
-way. A validator that has only ever been watched passing is not evidence
+formula run twice - and puts six clips and three broken rigs through the
+motion and rig gates the same way.
+
+The second half of that - fires on nothing ELSE - has been worth more
+than the first, twice. It is what caught `motion-joint-seam` refusing a
+fox tail that is visibly perfect, and what caught a flatness check that
+was really just reporting the same intruder twice. A validator that has only ever been watched passing is not evidence
 of anything: it passes when it is right and it passes when it is reading
 the wrong array.
 
@@ -144,6 +157,7 @@ once, in git, next to the subject:
 | `mayTouchEdge` | an ordinary keyed subject is allowed to reach the frame |
 | `allowHoles` | the subject genuinely encloses background (a seed clock is lace) |
 | `offPalette` | this asset is exempt from palette conformance |
+| `canon` | the name of a character whose one true generation is attached as a reference |
 | `sheet` | `{ cols, rows, cells, names }` - the grid it is generated on and sliced by |
 | `cut` | `{ shrink, width, quality, fraction }` - how it becomes a sprite |
 
