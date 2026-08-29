@@ -96,6 +96,7 @@ function help() {
   console.log('  node run.mjs check <name> [--clip=idle]            the motion gates')
   console.log('  node run.mjs frames <name> [--clip=idle] [--fps=30] [--seconds=2] [--video]')
   console.log('  node run.mjs deliver <prod> --yes [--budget=KB]')
+  console.log('  node run.mjs bible                            draw the style bible as a sheet')
   console.log('  node run.mjs models                           what the API key can see')
   console.log('  node run.mjs prove                            break the pictures, watch the gates fire')
   console.log('  node run.mjs engine <git args>                 git, aimed at the engine repo')
@@ -138,6 +139,9 @@ try {
       process.exitCode = e.status ?? 1
       throw DIED
     }
+  } else if (cmd === 'bible') {
+    const { bibleSheet } = await import('./stages/bible-sheet.mjs')
+    await bibleSheet()
   } else if (cmd === 'models') {
     const { listModels } = await import('./lib/gemini.mjs')
     const models = await listModels({ refresh: !!flag('refresh') })
