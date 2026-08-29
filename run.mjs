@@ -31,7 +31,7 @@ const STAGES = [
  * notices: the production name is swallowed as the value of a boolean and
  * the command runs against the wrong thing, or against nothing.
  */
-const TAKES_VALUE = new Set(['by', 'only', 'n', 'candidates', 'to', 'budget', 'round', 'from', 'clip', 'fps', 'seconds', 'scale', 'at', 'frames-n'])
+const TAKES_VALUE = new Set(['by', 'only', 'n', 'candidates', 'to', 'budget', 'round', 'from', 'clip', 'fps', 'seconds', 'scale', 'at', 'frames-n', 'ss'])
 const [cmd, ...rest] = process.argv.slice(2)
 const flags = {}
 const positional = []
@@ -248,7 +248,7 @@ ${r.parts} parts, ${(r.share * 100).toFixed(0)}% of the subject accounted for.`)
     if (!r.pass) process.exitCode = 1
   } else if (cmd === 'strip') {
     const { renderStrip } = await import('./stages/render.mjs')
-    await renderStrip(positional[0], { clip: flag('clip'), frames: Number(flag('frames', 6)), scale: Number(flag('scale', 0.5)) })
+    await renderStrip(positional[0], { clip: flag('clip'), frames: flag('frames', 6) === true ? 6 : Number(flag('frames', 6)), scale: Number(flag('scale', 0.5)) })
   } else if (cmd === 'poses') {
     const { renderPoses } = await import('./stages/render.mjs')
     await renderPoses(positional[0], { scale: Number(flag('scale', 0.5)) })
@@ -279,6 +279,7 @@ ${r.parts} parts, ${(r.share * 100).toFixed(0)}% of the subject accounted for.`)
         seconds: flag('seconds') ? Number(flag('seconds')) : undefined,
         only: list(flag('only')),
         video: !!flag('video'),
+        ss: Number(flag('ss', 2)),
       })
     }
   } else if (cmd === 'deliver') {

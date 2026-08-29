@@ -37,9 +37,11 @@ tmp/
 .DS_Store
 Thumbs.db
 
-# Frame stacks. Derived bytes by the definition above: `node run.mjs
-# frames <rig>` rebuilds them exactly from rig.json and the clip, both of
-# which are tracked, and a four-second stack is a hundred PNGs.
+# Frame stacks. Derived bytes by the definition above: the frames command
+# rebuilds them exactly from rig.json or a scene plus a clip, all of which
+# are tracked, and a twelve-second stack is hundreds of PNGs. The double
+# star matters: the first version of the scene pattern was one level too
+# shallow, missed scenes/renders/<scene>/<frame>-fps/, and 272 MB of
+# frames went into a commit before the hygiene count gave it away.
+**/renders/**/*fps/
 renders/*fps/
-canon/*/renders/*fps/
-scenes/renders/*fps/

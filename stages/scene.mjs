@@ -71,10 +71,10 @@ export async function sceneStrip(name, { frames = 5, scale = 0.4, log = console.
 export async function scenePoster(name, { at = 0, log = console.log } = {}) {
   const scene = open(name)
   const out = ensure(join(RENDERS, name))
-  const world = await composeWorld(scene, at)
+  const world = await composeWorld(scene, at, { scale: 2 })
   const made = []
   for (const frameName of Object.keys(scene.frames)) {
-    const buf = await takeFrame(scene, world, frameName)
+    const buf = await takeFrame(scene, world, frameName, { scale: 2 })
     const file = join(out, `${name}-${frameName}.png`)
     writeFileSync(file, buf)
     const m = await sharp(buf).metadata()
@@ -92,7 +92,7 @@ export async function scenePoster(name, { at = 0, log = console.log } = {}) {
  * which is both the correctness argument and most of the speed: two
  * outputs cost one composition.
  */
-export async function sceneFrames(name, { fps = 30, seconds, only, video = false, log = console.log } = {}) {
+export async function sceneFrames(name, { fps = 30, seconds, only, video = false, ss = 2, log = console.log } = {}) {
   const scene = open(name)
   const secs = seconds ?? scenePeriod(scene)
   const n = Math.max(1, Math.round(secs * fps))
@@ -103,10 +103,12 @@ export async function sceneFrames(name, { fps = 30, seconds, only, video = false
     for (const old of readdirSync(dirs[f])) rmSync(join(dirs[f], old))
   }
 
+  // Supersampled by default: the compositor is integer-pixel, gentle idle
+  // motion is sub-pixel per frame, and at 1x the result visibly snaps.
   for (let i = 0; i < n; i++) {
-    const world = await composeWorld(scene, i / fps)
+    const world = await composeWorld(scene, i / fps, { scale: ss })
     for (const f of wanted) {
-      writeFileSync(join(dirs[f], String(i).padStart(4, '0') + '.png'), await takeFrame(scene, world, f))
+      writeFileSync(join(dirs[f], String(i).padStart(4, '0') + '.png'), await takeFrame(scene, world, f, { scale: ss }))
     }
     if (i % 15 === 0) log(`  ${i}/${n}`)
   }
