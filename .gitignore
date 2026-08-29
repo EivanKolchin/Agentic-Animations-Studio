@@ -42,3 +42,4 @@ Thumbs.db
 # which are tracked, and a four-second stack is a hundred PNGs.
 renders/*fps/
 canon/*/renders/*fps/
+scenes/renders/*fps/

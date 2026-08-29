@@ -147,7 +147,7 @@ for (const f of files) {
 /* ---- --publish only: the engine/art split ---- */
 
 if (PUBLISH) {
-  const PERSONAL = ['bible/', 'canon/', 'productions/']
+  const PERSONAL = ['bible/', 'canon/', 'productions/', 'scenes/']
   const ALLOWED = /(^|\/)(README\.md|\.gitignore)$|\.example\.(json|md)$/
   for (const f of mine) {
     if (PERSONAL.some((p) => f.inStudio.startsWith(p)) && !ALLOWED.test(f.inStudio)) {

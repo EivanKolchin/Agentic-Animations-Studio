@@ -31,7 +31,7 @@ const STAGES = [
  * notices: the production name is swallowed as the value of a boolean and
  * the command runs against the wrong thing, or against nothing.
  */
-const TAKES_VALUE = new Set(['by', 'only', 'n', 'candidates', 'to', 'budget', 'round', 'from', 'clip', 'frames', 'fps', 'seconds', 'scale'])
+const TAKES_VALUE = new Set(['by', 'only', 'n', 'candidates', 'to', 'budget', 'round', 'from', 'clip', 'fps', 'seconds', 'scale', 'at', 'frames-n'])
 const [cmd, ...rest] = process.argv.slice(2)
 const flags = {}
 const positional = []
@@ -95,6 +95,7 @@ function help() {
   console.log('  node run.mjs strip <name> [--clip=idle] [--frames=6]')
   console.log('  node run.mjs check <name> [--clip=idle]            the motion gates')
   console.log('  node run.mjs frames <name> [--clip=idle] [--fps=30] [--seconds=2] [--video]')
+  console.log('  node run.mjs scene <name> [--check] [--strip] [--poster] [--frames] [--video]')
   console.log('  node run.mjs deliver <prod> --yes [--budget=KB]')
   console.log('  node run.mjs bible                            draw the style bible as a sheet')
   console.log('  node run.mjs models                           what the API key can see')
@@ -260,6 +261,26 @@ ${r.parts} parts, ${(r.share * 100).toFixed(0)}% of the subject accounted for.`)
       scale: Number(flag('scale', 1)),
       video: !!flag('video'),
     })
+  } else if (cmd === 'scene') {
+    const S = await import('./stages/scene.mjs')
+    const name = positional[0]
+    if (!name) die(new Error('Usage: node run.mjs scene <name> [--check] [--strip] [--poster] [--frames [--fps=30] [--video]]'))
+    const asked = ['check', 'strip', 'poster', 'frames'].filter((k) => flag(k))
+    const todo = asked.length ? asked : ['check', 'poster']
+    if (todo.includes('check')) {
+      const r = await S.sceneGates(name)
+      if (!r.pass) process.exitCode = 1
+    }
+    if (todo.includes('strip')) await S.sceneStrip(name, { frames: Number(flag('frames-n', 5)), scale: Number(flag('scale', 0.4)) })
+    if (todo.includes('poster')) await S.scenePoster(name, { at: Number(flag('at', 0)) })
+    if (todo.includes('frames')) {
+      await S.sceneFrames(name, {
+        fps: Number(flag('fps', 30)),
+        seconds: flag('seconds') ? Number(flag('seconds')) : undefined,
+        only: list(flag('only')),
+        video: !!flag('video'),
+      })
+    }
   } else if (cmd === 'deliver') {
     deliver(production(positional[0]))
   } else if (STAGES.some(([s]) => s === cmd)) {

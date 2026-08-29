@@ -18,7 +18,7 @@ import { writeFileSync } from 'node:fs'
 import { loadRig } from '../lib/rig.mjs'
 import { poseAt, timeline, strip as stripTimes } from '../lib/motion.mjs'
 import { renderPose, tStrip } from '../lib/render.mjs'
-import { CANON, ensure } from '../lib/env.mjs'
+import { CANON, ensure, ffmpeg } from '../lib/env.mjs'
 
 function clipOf(rig, name) {
   const clips = rig.clips || {}
@@ -84,7 +84,7 @@ export async function renderFrames(rigName, { clip: clipName, fps = 30, seconds,
   const mp4 = join(rig.dir, 'renders', `${rigName}-${name}.mp4`)
   try {
     execFileSync(
-      'ffmpeg',
+        ffmpeg(),
       [
         '-y', '-framerate', String(fps),
         '-i', join(dir, '%04d.png'),
@@ -100,7 +100,7 @@ export async function renderFrames(rigName, { clip: clipName, fps = 30, seconds,
     log(`  ${mp4}`)
     return { dir, frames: times.length, mp4 }
   } catch (e) {
-    log(`  frames written, but no video: ${/ENOENT/.test(String(e)) ? 'ffmpeg is not on PATH' : String(e.message).split('\n')[0]}`)
+    log(`  frames written, but no video: ${/ENOENT/.test(String(e)) ? 'ffmpeg was not found - set STUDIO_FFMPEG in .env or put it on PATH' : String(e.message).split('\n')[0]}`)
     return { dir, frames: times.length }
   }
 }
