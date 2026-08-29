@@ -215,6 +215,11 @@ for (const [name, pose] of [
       base({ planted: ['lower'] }),
       ['motion-anchor-drift'],
     ],
+    [
+      'a joint turning far enough to step open',
+      base({ channels: [{ part: 'lower', wave: { amp: 60, freq: 0.25 } }] }),
+      ['motion-joint-seam'],
+    ],
   ]
   for (const [name, clip, expect] of cases) {
     const failed = []
