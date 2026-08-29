@@ -1,0 +1,33 @@
+{
+  "_": "Schema example. A real bible/style.json is git-ignored personalisation.",
+
+  "idiom": "One illustration language, named and described in a sentence or two. This is the first thing in every assembled prompt and the standard the vision gate judges against.",
+
+  "palette": {
+    "_": "every colour the world may use, named by role, as hex - measured against by palette-conform",
+    "accent": "#000000",
+    "ink": "#000000"
+  },
+
+  "light": { "direction": "upper right", "quality": "warm, low, painted" },
+
+  "texture": "how surfaces are finished (grain, flat, wash)",
+  "edges": "crisp | soft | outlined",
+
+  "bans": ["no glow", "no aura", "no cast shadows", "no lens effects"],
+
+  "keyColour": "#ff00ff",
+  "darkKeyColour": "#202225",
+
+  "references": ["refs/master.png"],
+
+  "visionFloor": 7,
+
+  "gates": {
+    "_": "optional per-gate threshold overrides, keyed by gate id; anything absent takes the engine default",
+    "palette-conform": { "tolerance": 0.1, "maxOffPalette": 0.06 },
+    "background-flat": { "purity": 0.97, "spread": 0.02 },
+    "edge-halo": { "maxHalo": 0.008 },
+    "key-collision": { "maxHoleFraction": 0.01 }
+  }
+}

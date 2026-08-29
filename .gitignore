@@ -1,0 +1,38 @@
+# ---------------------------------------------------------------
+#  The studio lives inside its host project's repository and is
+#  tracked by it. The bible, the canon and the productions are the
+#  WORK - briefs, generations, cuts, decisions - and a private repo
+#  is exactly where they belong: they are the thing worth having a
+#  history of.
+#
+#  Two categories stay out, and only two.
+#
+#  SECRETS. The key is not the work, it is a credential, and a
+#  credential in a history cannot be removed cleanly. `npm run
+#  hygiene` fails the moment anything key-shaped is staged, and it
+#  is the check to run before every push.
+#
+#  DERIVED BYTES. Anything a command regenerates from something
+#  already tracked. Raw candidates are NOT derived - they cost
+#  credits and they are the evidence a selection was argued from.
+#
+#  Publishing the engine on its own later does not need this file
+#  to hide anything: `git subtree split -P studio` takes the folder
+#  out of the host history, and `npm run hygiene --publish` audits
+#  what that split would carry.
+# ---------------------------------------------------------------
+
+# secrets, first and loudest
+.env
+.env.*
+!.env.example
+*.key
+credentials*.json
+
+# generated + local
+node_modules/
+.cache/
+tmp/
+*.log
+.DS_Store
+Thumbs.db
