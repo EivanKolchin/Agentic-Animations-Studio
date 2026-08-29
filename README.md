@@ -68,9 +68,14 @@ the bottleneck.
    derived from the box it was cut from.
 8. **Validate motion** - the loop actually closes, the still frame is an
    honest one, and what is declared planted does not slide.
-9. **Deliver** - sprites to a project's asset folder, or frames through
-   ffmpeg to 16:9 and 9:16 video. *Human approves* - delivery writes into
-   another repository, so it wants `--yes` and a size budget.
+9. **Deliver** - a SCENE places rigs and backdrops in one world and
+   declares the rectangles cut out of it. The world is composed once per
+   instant and every frame is taken from it, so a 16:9 loop and a 9:16
+   vertical are two rectangles of the same pixels rather than two
+   animations that resemble each other. Then sprites to a project's asset
+   folder, or frame stacks through ffmpeg to video. *Human approves* -
+   delivery writes into another repository, so it wants `--yes` and a size
+   budget.
 10. **Learn** - when a change request reveals a class of problem rather
     than a matter of taste, it becomes a gate, and that gate records the
     failure that created it. The loader refuses a gate that does not.
@@ -130,6 +135,12 @@ And four run on MOTION, against a rig and a clip:
 | `motion-anchor-drift` | a planted part that slides because something above it turned |
 | `motion-joint-seam` | a joint that steps open because a covering skirt ends where the angles differ |
 
+And one on a SCENE:
+
+| gate | refuses |
+|---|---|
+| `scene-crop` | a layer promised to survive every frame that a crop cuts through, at any instant |
+
 `npm run prove` draws nine pictures, breaks eight of them in one specific
 way each, and asserts that the targeted gate fails AND that no other gate
 does. It then renders parts with markers at their own pivots and measures
@@ -176,6 +187,11 @@ And what a clip declares:
     npm install
     npm run prove            # the gates, proved against their own defects
     npm run hygiene          # before every push
+
+`ffmpeg` is optional and is found through `STUDIO_FFMPEG` or PATH. Without
+it, frame stacks are still written and the video step says so - a stack of
+PNGs can be turned into anything later, and a pipeline that fails at the
+last step having produced nothing is worse than one that produces frames.
 
 **Generation needs billing enabled**, and vision does not. A free-tier
 key returns 429 with `limit: 0` for every image model - a closed door,
