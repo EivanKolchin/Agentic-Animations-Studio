@@ -188,10 +188,16 @@ And what a clip declares:
     npm run prove            # the gates, proved against their own defects
     npm run hygiene          # before every push
 
-`ffmpeg` is optional and is found through `STUDIO_FFMPEG` or PATH. Without
-it, frame stacks are still written and the video step says so - a stack of
-PNGs can be turned into anything later, and a pipeline that fails at the
-last step having produced nothing is worse than one that produces frames.
+`ffmpeg` is optional and is found through `STUDIO_FFMPEG` or PATH. With
+it, `--video` encodes STRAIGHT FROM MEMORY: frames are composed, cropped
+and written into ffmpeg's stdin, and peak disk is the MP4. That is not a
+micro-optimisation - twenty-four seconds at 30fps in two shapes is 1440
+PNGs and the better part of two gigabytes, written only to be read once,
+and it filled a disk mid-render on the machine this was built on. Pass
+`--keep-frames` to write the stack anyway; without ffmpeg that is what
+happens regardless, because a stack of PNGs can be turned into anything
+later and a pipeline that produces nothing is worse than one that
+produces frames.
 
 **Generation needs billing enabled**, and vision does not. A free-tier
 key returns 429 with `limit: 0` for every image model - a closed door,

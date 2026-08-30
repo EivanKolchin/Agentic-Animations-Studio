@@ -280,6 +280,7 @@ ${r.parts} parts, ${(r.share * 100).toFixed(0)}% of the subject accounted for.`)
         only: list(flag('only')),
         video: !!flag('video'),
         ss: Number(flag('ss', 2)),
+        keepFrames: !!flag('keep-frames'),
       })
     }
   } else if (cmd === 'deliver') {

@@ -9,9 +9,9 @@
  * six stills reads in motion, and a scene that does not cannot be fixed
  * by watching it play.
  */
-import { writeFileSync, readdirSync, rmSync, existsSync } from 'node:fs'
+import { writeFileSync, readdirSync, rmSync, existsSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawn } from 'node:child_process'
 import sharp from 'sharp'
 import { loadScene, checkScene, composeWorld, takeFrame, scenePeriod } from '../lib/scene.mjs'
 import { STUDIO, ensure, ffmpeg } from '../lib/env.mjs'
@@ -92,11 +92,83 @@ export async function scenePoster(name, { at = 0, log = console.log } = {}) {
  * which is both the correctness argument and most of the speed: two
  * outputs cost one composition.
  */
-export async function sceneFrames(name, { fps = 30, seconds, only, video = false, ss = 2, log = console.log } = {}) {
+/**
+ * Encode straight from memory, one ffmpeg per output frame.
+ *
+ * A frame stack is a lot of disk: twenty-four seconds at 30fps in two
+ * shapes is 1440 PNGs and the better part of two gigabytes, and it is
+ * written only to be read once and deleted. Worse, it is written while
+ * the machine may have no room for it - this exact render took a disk
+ * from 2GB free to 316MB before it was killed, on a machine where a
+ * failed write has truncated source files before.
+ *
+ * So when a video is what is wanted, the frames never land: each one is
+ * composed, cropped, and written into ffmpeg's stdin. Peak disk is the
+ * MP4 itself. `--keep-frames` still writes the stack for anyone who wants
+ * the PNGs, because they remain the deliverable that survives a missing
+ * ffmpeg.
+ */
+function encoder(mp4, fps) {
+  const p = spawn(ffmpeg(), [
+    '-y', '-f', 'image2pipe', '-framerate', String(fps), '-i', '-',
+    '-vf', 'pad=ceil(iw/2)*2:ceil(ih/2)*2', '-pix_fmt', 'yuv420p', '-crf', '18', mp4,
+  ], { stdio: ['pipe', 'ignore', 'pipe'] })
+  let err = ''
+  p.stderr.on('data', (d) => { err += d.toString().slice(0, 2000) })
+  const done = new Promise((res, rej) => {
+    p.on('error', rej)
+    p.on('close', (code) => (code === 0 ? res() : rej(new Error(err.split('\n').slice(-4).join('\n')))))
+  })
+  return {
+    // Backpressure is not optional here: a 1920x1080 PNG every few
+    // hundred milliseconds outruns the encoder, and an unbounded write
+    // queue is the whole megabyte budget back again, in memory.
+    async write(buf) {
+      if (!p.stdin.write(buf)) await new Promise((r) => p.stdin.once('drain', r))
+    },
+    async finish() {
+      p.stdin.end()
+      await done
+    },
+  }
+}
+
+export async function sceneFrames(name, { fps = 30, seconds, only, video = false, ss = 2, keepFrames = false, log = console.log } = {}) {
   const scene = open(name)
   const secs = seconds ?? scenePeriod(scene)
   const n = Math.max(1, Math.round(secs * fps))
   const wanted = Object.keys(scene.frames).filter((f) => !only || only.includes(f))
+
+  /* ---- straight to video, nothing on disk ---- */
+  if (video && !keepFrames) {
+    ensure(join(RENDERS, name))
+    const enc = {}
+    try {
+      for (const f of wanted) enc[f] = encoder(join(RENDERS, name, `${name}-${f}.mp4`), fps)
+    } catch (e) {
+      log(`  cannot start ffmpeg (${e.message}) - re-run with --keep-frames to write the stack instead`)
+      return { frames: 0 }
+    }
+    for (let i = 0; i < n; i++) {
+      const world = await composeWorld(scene, i / fps, { scale: ss })
+      for (const f of wanted) await enc[f].write(await takeFrame(scene, world, f, { scale: ss }))
+      if (i % 30 === 0) log(`  ${i}/${n}`)
+    }
+    const made = []
+    for (const f of wanted) {
+      try {
+        await enc[f].finish()
+        const mp4 = join(RENDERS, name, `${name}-${f}.mp4`)
+        log(`  ${mp4}  ${(statSync(mp4).size / 1024 / 1024).toFixed(1)} MB`)
+        made.push(mp4)
+      } catch (e) {
+        log(`  ${f} failed to encode: ${String(e.message).split('\n')[0]}`)
+      }
+    }
+    log(`  ${n} frames at ${fps}fps (${secs}s), encoded from memory - no frame stack written`)
+    return { frames: n, video: made }
+  }
+
   const dirs = {}
   for (const f of wanted) {
     dirs[f] = ensure(join(RENDERS, name, `${f}-${fps}fps`))
