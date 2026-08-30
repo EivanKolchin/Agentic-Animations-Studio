@@ -19,7 +19,8 @@
 import { readFileSync, writeFileSync, existsSync, copyFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { load, save, crop, coverage } from '../lib/image.mjs'
-import { checkRig, inOrder } from '../lib/rig.mjs'
+import { checkRig, inOrder, solve, rotatedPivot } from '../lib/rig.mjs'
+import { poseAt } from '../lib/motion.mjs'
 import { CANON, ensure } from '../lib/env.mjs'
 
 /** Promote a cut asset into the canon. This is the moment a picture stops
@@ -125,12 +126,55 @@ export async function rig(name, { log = console.log } = {}) {
     log(`  ${p.id.padEnd(12)} ${box.width}x${box.height}  ${(fill * 100).toFixed(0)}% subject  pivot at ${parts.at(-1).at.map(Math.round).join(',')}`)
   }
 
+  /**
+   * THE CANVAS IS SIZED FOR THE MOTION, NOT FOR THE REST POSE.
+   *
+   * A cut source is trimmed to its subject, so its bounding box is
+   * exactly the silhouette standing still. The moment a part rotates
+   * outward it needs room that box does not have, and the renderer -
+   * which crops back to the canvas so a frame is always the declared
+   * size - slices it off. On this fox it took the tip clean off the tail
+   * with a straight vertical edge, in every frame of every clip, and
+   * nothing at rest showed it.
+   *
+   * So the extent is MEASURED: every part solved at every instant of
+   * every clip, its rotated box unioned, and the canvas grown to hold all
+   * of it with the parts shifted to match. Guessing a margin would be
+   * wrong on the first rig with a long tail, which is this one.
+   */
+  const clips = decl.clips || {}
+  let minX = 0, minY = 0, maxX = source.w, maxY = source.h
+  for (const clip of Object.values(clips)) {
+    const span = clip.period ?? 4
+    for (let i = 0; i <= 48; i++) {
+      const solved = solve({ parts }, poseAt(clip, (i * span) / 48))
+      for (const s of solved) {
+        const r = rotatedPivot(s.part.box.width, s.part.box.height, s.part.pivotPx, s.angle)
+        const l = s.pivot[0] - r.x, t = s.pivot[1] - r.y
+        if (l < minX) minX = l
+        if (t < minY) minY = t
+        if (l + r.W > maxX) maxX = l + r.W
+        if (t + r.H > maxY) maxY = t + r.H
+      }
+    }
+  }
+  const padL = Math.ceil(-Math.min(0, minX)), padT = Math.ceil(-Math.min(0, minY))
+  const canvas = { w: Math.ceil(maxX) + padL, h: Math.ceil(maxY) + padT }
+  if (padL || padT || canvas.w !== source.w || canvas.h !== source.h) {
+    for (const p of parts) p.at = [p.at[0] + padL, p.at[1] + padT]
+    log(
+      `  ${'canvas'.padEnd(12)} grown to ${canvas.w}x${canvas.h} from ${source.w}x${source.h} ` +
+        `so the motion never leaves it (offset ${padL},${padT})`,
+    )
+  }
+
   const out = {
     name: decl.name || name,
-    canvas: { w: source.w, h: source.h },
+    canvas,
+    origin: [padL, padT],
     source: src.split(/[\\/]/).pop(),
     parts,
-    clips: decl.clips || {},
+    clips,
   }
   const problems = checkRig({ ...out, dir })
   if (problems.length) throw new Error(`The rig is not renderable:\n  - ${problems.join('\n  - ')}`)

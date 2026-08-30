@@ -22,18 +22,29 @@ export default {
     const sharp = (await import('sharp')).default
     const { join } = await import('node:path')
     const rest = await renderPose(rig, {})
+    // The canvas is grown to hold the MOTION, so it is generally bigger
+    // than the source and the source sits at `origin` inside it. Comparing
+    // the two buffers index-for-index without that offset reported 57%
+    // lost and 57% invented on a rig that was perfect - the whole picture
+    // shifted by twenty-one pixels.
+    const [ox, oy] = rig.origin || [0, 0]
+    const srcMeta = await sharp(join(rig.dir, rig.source)).metadata()
     const [src, got] = await Promise.all([
       sharp(join(rig.dir, rig.source)).ensureAlpha().raw().toBuffer(),
       sharp(rest).ensureAlpha().raw().toBuffer(),
     ])
-    const n = rig.canvas.w * rig.canvas.h
+    const { w: CW } = rig.canvas
     let missing = 0, extra = 0, subject = 0
-    for (let i = 0; i < n; i++) {
-      const a = src[i * 4 + 3] >= 128
-      const b = got[i * 4 + 3] >= 128
-      if (a) subject++
-      if (a && !b) missing++
-      else if (!a && b) extra++
+    for (let y = 0; y < rig.canvas.h; y++) {
+      for (let x = 0; x < CW; x++) {
+        const sx = x - ox, sy = y - oy
+        const inSrc = sx >= 0 && sy >= 0 && sx < srcMeta.width && sy < srcMeta.height
+        const a = inSrc && src[(sy * srcMeta.width + sx) * 4 + 3] >= 128
+        const b = got[(y * CW + x) * 4 + 3] >= 128
+        if (a) subject++
+        if (a && !b) missing++
+        else if (!a && b) extra++
+      }
     }
     if (!subject) return { pass: false, score: 0, detail: 'the source has no subject in it' }
     const lost = missing / subject
