@@ -141,13 +141,20 @@ And one on a SCENE:
 |---|---|
 | `scene-crop` | a layer promised to survive every frame that a crop cuts through, at any instant |
 
-`npm run prove` draws nine pictures, breaks eight of them in one specific
-way each, and asserts that the targeted gate fails AND that no other gate
-does. It then renders parts with markers at their own pivots and measures
-where they actually landed - which checks the chain, the composite offset
-and the rotation sign against the PICTURE rather than against the same
-formula run twice - and puts six clips and three broken rigs through the
-motion and rig gates the same way.
+`npm run prove` runs three provers and needs no art to do it - every
+fixture is drawn.
+
+- **gates**: nine pictures, eight broken one specific way each, asserting
+  the targeted gate fails AND that no other one does.
+- **rig**: parts rendered with markers at their own pivots, measured
+  where they actually LANDED - which checks the chain, the composite
+  offset and the rotation sign against the picture rather than against
+  the same formula run twice - plus six clips and three broken rigs.
+- **scene**: both crops, the crop gate in all three of its states, and
+  the two loop checks that fail silently in production, because neither
+  breaks a rig - every motion gate still passes and only the sky jumps.
+  It also composes a world at t=0 and t=period and subtracts them, since
+  "this scene loops" is otherwise a claim nobody tested.
 
 The second half of that - fires on nothing ELSE - has been worth more
 than the first, twice. It is what caught `motion-joint-seam` refusing a

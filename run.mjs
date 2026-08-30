@@ -115,6 +115,7 @@ try {
   } else if (cmd === 'prove') {
     execFileSync('node', [join(STUDIO, 'prove', 'gates.mjs')], { stdio: 'inherit' })
     execFileSync('node', [join(STUDIO, 'prove', 'rig.mjs')], { stdio: 'inherit' })
+    execFileSync('node', [join(STUDIO, 'prove', 'scene.mjs')], { stdio: 'inherit' })
   } else if (cmd === 'engine') {
     /**
      * Git, aimed at the ENGINE repository.
