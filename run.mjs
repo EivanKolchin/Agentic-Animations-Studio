@@ -97,6 +97,7 @@ function help() {
   console.log('  node run.mjs frames <name> [--clip=idle] [--fps=30] [--seconds=2] [--video]')
   console.log('  node run.mjs scene <name> [--check] [--strip] [--poster] [--frames] [--video]')
   console.log('  node run.mjs deliver <prod> --yes [--budget=KB]')
+  console.log('  node run.mjs deliver-rig <name> --yes        a rig a browser can drive from scroll')
   console.log('  node run.mjs bible                            draw the style bible as a sheet')
   console.log('  node run.mjs models                           what the API key can see')
   console.log('  node run.mjs prove                            break the pictures, watch the gates fire')
@@ -284,6 +285,15 @@ ${r.parts} parts, ${(r.share * 100).toFixed(0)}% of the subject accounted for.`)
         keepFrames: !!flag('keep-frames'),
       })
     }
+  } else if (cmd === 'deliver-rig') {
+    const { deliverRig } = await import('./stages/deliver-rig.mjs')
+    const name = positional[0]
+    if (!name) die(new Error('Usage: node run.mjs deliver-rig <name> [--to=path] [--yes] [--budget=KB]'))
+    await deliverRig(name, {
+      to: typeof flag('to') === 'string' ? flag('to') : undefined,
+      yes: !!flag('yes'),
+      budget: flag('budget') ? Number(flag('budget')) : null,
+    })
   } else if (cmd === 'deliver') {
     deliver(production(positional[0]))
   } else if (STAGES.some(([s]) => s === cmd)) {
